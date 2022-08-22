@@ -1,7 +1,6 @@
 package ru.netology.generator;
 
 import com.github.javafaker.Faker;
-import com.google.gson.Gson;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
@@ -12,7 +11,7 @@ import java.util.Locale;
 
 import static io.restassured.RestAssured.given;
 
-public class DataGenerator {        // public class UserRegistrtionDataGenerator {
+public class DataGenerator {
 
     private static RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBaseUri("http://localhost")
@@ -22,9 +21,6 @@ public class DataGenerator {        // public class UserRegistrtionDataGenerator
             .log(LogDetail.ALL)
             .build();
 
-    private final static String activeStatus = "active";
-    private final static String blockedStatus = "blocked";
-    private static Gson gson = new Gson();
     private static Faker faker = new Faker(new Locale("en"));
 
     private DataGenerator() {
@@ -33,43 +29,37 @@ public class DataGenerator {        // public class UserRegistrtionDataGenerator
     private static void registrationUsers(RegistrationData userData) {
         given()
                 .spec(requestSpec)
-                .body(gson.toJson(userData))
+                .body(new RegistrationData(
+                        userData.getLogin(),
+                        userData.getPassword(),
+                        userData.getStatus()))
                 .when()
                 .post("/api/system/users")
                 .then()
                 .statusCode(200);
     }
 
-    public static RegistrationData generateValidActive() {
-        RegistrationData regData = new RegistrationData(faker.name().username(),
-                faker.internet().password(true), activeStatus);
-        registrationUsers(regData);
-        return regData;
+    public static String generateLogin() {
+        return faker.name().firstName();
     }
 
-    public static RegistrationData generateValidBlocked() {
-        RegistrationData regData = new RegistrationData(faker.name().username(),
-                faker.internet().password(true), blockedStatus);
-        registrationUsers(regData);
-        return regData;
+    public static String generatePassword() {
+        return faker.internet().password();
     }
 
-    public static RegistrationData generateInvalidLogin() {
-        String password = faker.internet().password(true);
-        RegistrationData regData = new RegistrationData(faker.name().username(),
-                password, activeStatus);
-        registrationUsers(regData);
-        return new RegistrationData(faker.name().username(),
-                password, activeStatus);
-    }
+    public static class Registration {
+        private Registration() {
+        }
 
-    public static RegistrationData generateInvalidPassword() {
-        String login = faker.name().username();
-        RegistrationData regData = new RegistrationData(login,
-                faker.internet().password(true), activeStatus);
-        registrationUsers(regData);
-        return new RegistrationData(login,
-                faker.internet().password(true), activeStatus);
+        public static RegistrationData generateUser(String status) {
+            return new RegistrationData(generateLogin(), generatePassword(), status);
+        }
+
+        public static RegistrationData registerUser(String status) {
+            RegistrationData registerUser = generateUser(status);
+            registrationUsers(registerUser);
+            return registerUser;
+        }
     }
 
     @Value
